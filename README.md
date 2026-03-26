@@ -2,7 +2,7 @@
 
 Animated visualization of how US household income distribution has changed from 1971 to 2024, rendered as shareable video. Inspired by [Alan Smith's work at the Financial Times](https://www.ft.com/content/98ce14ee-99a6-11e5-95c7-d47aa298f769?syn-25a6b1a6=1) using Pew Research Center methodology.
 
-<video src="https://github.com/FlorinPopaCodes/income-shift/releases/download/v1.0.0/landscape.mp4" autoplay loop muted playsinline></video>
+https://github.com/user-attachments/assets/03c3e6e3-af46-4929-9cb4-4d6e50f09152
 
 The distribution flattens and shifts right over 50 years: the middle class hollows out as households move into both lower and upper income tiers.
 
