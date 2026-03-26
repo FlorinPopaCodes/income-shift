@@ -76,15 +76,15 @@ Sources: [Census P-60/279](https://www2.census.gov/programs-surveys/demo/tables/
 
 ### Binning
 
-The x-axis uses a non-linear scale with four equal-width visual zones to show detail where the data is dense while still capturing the long right tail:
+The x-axis uses a non-linear scale with four visual zones to show detail where the data is dense while still capturing the right tail:
 
 | Zone | Income range | Bins | Bin width |
 |------|-------------|------|-----------|
 | 1 | $0 -- $70k | 14 | $5k |
 | 2 | $70k -- $140k | 14 | $5k |
 | 3 | $140k -- $280k | 14 | $10k |
-| 4 | $280k -- $1M | 12 | $60k |
-| Overflow | $1M+ | 1 | -- |
+| 4 | $280k -- $500k | 11 | $20k |
+| Overflow | $500k+ | 1 | -- |
 
 The y-axis shows **density** (% of adults per $1,000 of income). This ensures bar *area* is proportional to population share -- essential for visual accuracy when bins have different widths.
 
