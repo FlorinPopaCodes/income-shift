@@ -1,7 +1,8 @@
 import React from "react";
-import { SANS } from "./TitleBlock";
+import { SANS, color, chart } from "../lib/tokens";
 import { dollarToXFrac } from "../lib/scales";
 import type { ChartDimensions } from "../types";
+import { lerp } from "../lib/interpolation";
 
 interface Props {
   dim: ChartDimensions;
@@ -10,7 +11,7 @@ interface Props {
   yMax: number;
   opacity: number;
   year: number;
-  progress: number; // 0→1: line draws from left to right
+  progress: number;
 }
 
 export const ReferenceLine: React.FC<Props> = ({
@@ -33,31 +34,29 @@ export const ReferenceLine: React.FC<Props> = ({
     })
     .join(" ");
 
-  // Clip rect width based on progress (draws line from left to right)
   const clipRight = dim.margin.left + progress * dim.innerW;
 
-  // Label position: just past the right edge of the drawn line, at the curve height
-  // Find the bin closest to the clip edge
-  const lastVisibleBin = Math.min(
-    Math.floor(progress * (densities.length - 1)),
-    densities.length - 1,
-  );
-  const labelCx = (xPos(binEdges[lastVisibleBin]) + xPos(binEdges[lastVisibleBin + 1])) / 2;
-  const labelCy = yPos(densities[lastVisibleBin]);
-
-  // Once fully drawn, place label near the peak
+  // Badge position: lerp from drawing edge to peak as progress increases
   const peakIdx = densities.indexOf(Math.max(...densities));
   const peakX = (xPos(binEdges[peakIdx]) + xPos(binEdges[peakIdx + 1])) / 2;
   const peakY = yPos(densities[peakIdx]);
 
-  const isComplete = progress >= 0.99;
-  const finalLabelX = isComplete ? peakX : labelCx;
-  const finalLabelY = isComplete ? peakY : labelCy;
+  const lastVisibleBin = Math.min(
+    Math.floor(progress * (densities.length - 1)),
+    densities.length - 1,
+  );
+  const edgeX = (xPos(binEdges[lastVisibleBin]) + xPos(binEdges[lastVisibleBin + 1])) / 2;
+  const edgeY = yPos(densities[lastVisibleBin]);
+
+  // Smooth transition: once peak is drawn (~40%), start blending toward peak position
+  const peakDrawn = Math.min(1, Math.max(0, (progress - 0.4) / 0.4));
+  const badgeCenterX = lerp(edgeX, peakX, peakDrawn);
+  const badgeCenterY = lerp(edgeY, peakY, peakDrawn);
 
   const labelW = 48;
   const labelH = 22;
-  const badgeX = finalLabelX + 8;
-  const badgeY = finalLabelY - labelH - 8;
+  const badgeX = badgeCenterX + 8;
+  const badgeY = badgeCenterY - labelH - 8;
 
   const clipId = "ref-line-clip";
 
@@ -74,39 +73,36 @@ export const ReferenceLine: React.FC<Props> = ({
         </clipPath>
       </defs>
 
-      {/* Animated line */}
       <polyline
         points={points}
         fill="none"
-        stroke="#6b7b8d"
-        strokeWidth={2.5}
+        stroke={color.refLine}
+        strokeWidth={chart.refLineWidth}
         clipPath={`url(#${clipId})`}
       />
 
-      {/* Label badge with connector line */}
       {progress > 0.05 && (
         <g>
-          {/* Badge background */}
           <rect
             x={badgeX}
             y={badgeY}
             width={labelW}
             height={labelH}
             rx={3}
-            fill="#fff1e5"
-            stroke="#6b7b8d"
+            fill={color.bg}
+            stroke={color.refLine}
             strokeWidth={1.5}
           />
-          {/* Badge text */}
           <text
             x={badgeX + labelW / 2}
             y={badgeY + labelH / 2 + 1}
             textAnchor="middle"
             dominantBaseline="middle"
-            fill="#6b7b8d"
+            fill={color.refLine}
             fontSize={dim.axisSize - 4}
             fontFamily={SANS}
             fontWeight={600}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {year}
           </text>

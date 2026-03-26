@@ -1,19 +1,6 @@
 import React from "react";
-import {
-  loadFont as loadSerif,
-  fontFamily as serifFontFamily,
-} from "@remotion/google-fonts/SourceSerif4";
-import {
-  loadFont as loadSans,
-  fontFamily as sansFontFamily,
-} from "@remotion/google-fonts/SourceSans3";
+import { SANS, SERIF, color } from "../lib/tokens";
 import type { ChartDimensions, Layout } from "../types";
-
-loadSerif();
-loadSans();
-
-export const SANS = `${sansFontFamily}, sans-serif`;
-export const SERIF = `${serifFontFamily}, serif`;
 
 interface Props {
   dim: ChartDimensions;
@@ -26,8 +13,8 @@ export const TitleBlock: React.FC<Props> = ({ dim, layout, opacity }) => (
     style={{
       position: "absolute",
       top: layout === "vertical" ? 60 : 24,
-      left: 40,
-      right: 40,
+      left: dim.margin.left,
+      right: dim.margin.right,
       opacity,
     }}
   >
@@ -37,7 +24,7 @@ export const TitleBlock: React.FC<Props> = ({ dim, layout, opacity }) => (
         fontWeight: 600,
         fontSize: dim.titleSize,
         lineHeight: 1.3,
-        color: "#33302e",
+        color: color.textPrimary,
       }}
     >
       Household income in 2024 dollars
@@ -46,7 +33,7 @@ export const TitleBlock: React.FC<Props> = ({ dim, layout, opacity }) => (
       style={{
         fontFamily: SANS,
         fontSize: dim.subtitleSize,
-        color: "#66605c",
+        color: color.textSecondary,
         fontWeight: 400,
         marginTop: 4,
       }}

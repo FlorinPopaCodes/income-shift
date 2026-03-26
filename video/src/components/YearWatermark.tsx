@@ -1,5 +1,5 @@
 import React from "react";
-import { SERIF } from "./TitleBlock";
+import { SERIF, color, opacity as op } from "../lib/tokens";
 import type { ChartDimensions } from "../types";
 
 interface Props {
@@ -17,10 +17,11 @@ export const YearWatermark: React.FC<Props> = ({ dim, year, opacity }) => (
       fontFamily: SERIF,
       fontSize: dim.yearSize,
       fontWeight: 700,
-      color: "#ccc1b7",
-      opacity: opacity * 0.5,
+      color: color.watermark,
+      opacity: opacity * op.watermark,
       lineHeight: 1,
       zIndex: 1,
+      fontVariantNumeric: "tabular-nums",
     }}
   >
     {Math.round(year)}

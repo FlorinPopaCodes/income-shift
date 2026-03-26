@@ -1,5 +1,5 @@
 import React from "react";
-import { SANS } from "./TitleBlock";
+import { SANS, color, chart } from "../lib/tokens";
 import { dollarToXFrac, X_TICKS } from "../lib/scales";
 import type { ChartDimensions } from "../types";
 
@@ -24,8 +24,8 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
           x2={dim.margin.left + dim.innerW}
           y1={yPos(v)}
           y2={yPos(v)}
-          stroke="#e0d8d0"
-          strokeDasharray="2,3"
+          stroke={color.grid}
+          strokeDasharray={chart.gridDash}
         />
       ))}
 
@@ -35,7 +35,7 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
         x2={dim.margin.left + dim.innerW}
         y1={yPos(0)}
         y2={yPos(0)}
-        stroke="#ccc1b7"
+        stroke={color.axis}
       />
 
       {/* X-axis ticks and labels */}
@@ -45,16 +45,18 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
             x1={xPos(v)}
             x2={xPos(v)}
             y1={yPos(0)}
-            y2={yPos(0) + 6}
-            stroke="#ccc1b7"
+            y2={yPos(0) + chart.tickLength}
+            stroke={color.axis}
           />
           <text
             x={xPos(v)}
-            y={yPos(0) + 22}
+            y={yPos(0) + chart.tickLabelOffset}
             textAnchor="middle"
-            fill="#66605c"
-            fontSize={v >= 300_000 ? dim.axisSize - 4 : dim.axisSize}
+            fill={color.textSecondary}
+            fontSize={dim.axisSize}
+            fontWeight={400}
             fontFamily={SANS}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {label}
           </text>
@@ -68,9 +70,11 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
           x={dim.margin.left - 8}
           y={yPos(v) + 4}
           textAnchor="end"
-          fill="#66605c"
+          fill={color.textSecondary}
           fontSize={dim.axisSize}
+          fontWeight={400}
           fontFamily={SANS}
+          fontVariantNumeric="tabular-nums"
         >
           {v}%
         </text>

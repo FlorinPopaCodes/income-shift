@@ -1,4 +1,5 @@
 import React from "react";
+import { color, opacity as op, chart } from "../lib/tokens";
 import { dollarToXFrac } from "../lib/scales";
 import type { ChartDimensions } from "../types";
 
@@ -23,7 +24,7 @@ export const Bars: React.FC<Props> = ({
     <g opacity={opacity}>
       {densities.map((density, i) => {
         const bx = xPos(binEdges[i]);
-        const bw = (xPos(binEdges[i + 1]) - xPos(binEdges[i])) * 0.88;
+        const bw = (xPos(binEdges[i + 1]) - xPos(binEdges[i])) * chart.barGap;
         const barH = (density / yMax) * dim.innerH;
 
         return (
@@ -33,9 +34,9 @@ export const Bars: React.FC<Props> = ({
             y={dim.margin.top + dim.innerH - barH}
             width={Math.max(0, bw)}
             height={barH}
-            fill="#c2786c"
-            opacity={0.75}
-            rx={0.5}
+            fill={color.bar}
+            opacity={op.bar}
+            rx={chart.barRadius}
           />
         );
       })}

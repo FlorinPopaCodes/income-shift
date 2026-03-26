@@ -1,5 +1,5 @@
 import React from "react";
-import { SANS } from "./TitleBlock";
+import { SANS, color, opacity as op } from "../lib/tokens";
 import { dollarToXFrac } from "../lib/scales";
 import type { ChartDimensions } from "../types";
 
@@ -28,15 +28,16 @@ export const MiddleIncomeBand: React.FC<Props> = ({
         y={dim.margin.top}
         width={muX - mlX}
         height={dim.innerH}
-        fill="#d4c5a9"
-        opacity={0.25}
+        fill={color.band}
+        opacity={op.band}
       />
       <text
         x={(mlX + muX) / 2}
         y={dim.margin.top + 20}
         textAnchor="middle"
-        fill="#9e9590"
+        fill={color.textTertiary}
         fontSize={dim.axisSize - 2}
+        fontWeight={400}
         fontFamily={SANS}
       >
         middle income

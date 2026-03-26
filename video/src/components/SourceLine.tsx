@@ -1,5 +1,5 @@
 import React from "react";
-import { SANS } from "./TitleBlock";
+import { SANS, color } from "../lib/tokens";
 import type { ChartDimensions, Layout } from "../types";
 
 interface Props {
@@ -13,11 +13,12 @@ export const SourceLine: React.FC<Props> = ({ dim, layout, opacity }) => (
     style={{
       position: "absolute",
       bottom: layout === "vertical" ? 140 : layout === "square" ? 40 : 24,
-      left: 40,
-      right: 40,
+      left: dim.margin.left,
+      right: dim.margin.right,
       fontSize: dim.sourceSize,
-      color: "#9e9590",
+      color: color.textTertiary,
       fontFamily: SANS,
+      fontWeight: 400,
       opacity,
     }}
   >
