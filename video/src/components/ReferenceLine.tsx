@@ -55,20 +55,23 @@ export const ReferenceLine: React.FC<Props> = ({
     (xPos(binEdges[shoulderIdx]) + xPos(binEdges[shoulderIdx + 1])) / 2;
   const shoulderY = yPos(lineDensities[shoulderIdx]);
 
-  const lastVisibleBin = Math.min(
-    Math.floor(progress * (lineDensities.length - 1)),
-    lineDensities.length - 1,
+  // Smooth edge position: interpolate between bins instead of snapping
+  const rawBin = progress * (lineDensities.length - 1);
+  const binFloor = Math.min(Math.floor(rawBin), lineDensities.length - 2);
+  const binFrac = rawBin - binFloor;
+  const binX = (i: number) =>
+    (xPos(binEdges[i]) + xPos(binEdges[i + 1])) / 2;
+  const edgeX = lerp(binX(binFloor), binX(binFloor + 1), binFrac);
+  const edgeY = lerp(
+    yPos(lineDensities[binFloor]),
+    yPos(lineDensities[binFloor + 1]),
+    binFrac,
   );
-  const edgeX = (xPos(binEdges[lastVisibleBin]) + xPos(binEdges[lastVisibleBin + 1])) / 2;
-  const edgeY = yPos(lineDensities[lastVisibleBin]);
 
-  // Smooth transition: once shoulder bin is drawn, start blending toward shoulder
-  const shoulderDrawn = Math.min(
-    1,
-    Math.max(0, (progress - 0.4) / 0.4),
-  );
-  const badgeCenterX = lerp(edgeX, shoulderX, shoulderDrawn);
-  const badgeCenterY = lerp(edgeY, shoulderY, shoulderDrawn);
+  // Track the edge until it reaches the shoulder, then lock in place
+  const pastShoulder = edgeX >= shoulderX;
+  const badgeCenterX = pastShoulder ? shoulderX : edgeX;
+  const badgeCenterY = pastShoulder ? shoulderY : edgeY;
 
   const labelW = 52;
   const labelH = 24;
