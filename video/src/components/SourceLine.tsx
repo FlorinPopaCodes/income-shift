@@ -20,6 +20,6 @@ export const SourceLine: React.FC<Props> = ({ dim, layout }) => (
       fontWeight: 400,
     }}
   >
-    Source: IPUMS CPS · 2024 dollars · Adults 18+
+    Source: IPUMS CPS · 2024 dollars · 3-person equivalent · Adults 18+
   </div>
 );

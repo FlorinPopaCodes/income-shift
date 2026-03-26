@@ -8,7 +8,7 @@ The distribution flattens and shifts right over 50 years: the middle class hollo
 
 ## What this does
 
-A histogram of household income (in constant 2024 dollars) animates through 5-year snapshots from 1971 to 2024. A reference line preserves the 1971 shape for comparison. A shaded band tracks the "middle income" range as it shifts.
+A histogram of size-adjusted household income (in constant 2024 dollars) animates through 5-year snapshots from 1971 to 2024. A reference line preserves the 1971 shape for comparison. A shaded band tracks the "middle income" range as it shifts.
 
 Output formats:
 - **Landscape** (1920x1080) -- presentations, YouTube
@@ -38,7 +38,7 @@ bun run render.ts    # outputs MP4 + WebM for all 3 formats to ../output/
 If you want to regenerate the data from raw microdata:
 
 1. Create an account at [IPUMS CPS](https://cps.ipums.org/cps/)
-2. Create an extract with variables: `YEAR`, `SERIAL`, `MONTH`, `CPSID`, `ASECFLAG`, `HFLAG`, `ASECWTH`, `NUMPREC`, `HHINCOME`, `PERNUM`, `CPSIDP`, `CPSIDV`, `ASECWT`, `AGE`
+2. Create an extract with variables: `YEAR`, `SERIAL`, `MONTH`, `CPSID`, `ASECFLAG`, `HFLAG`, `ASECWTH`, `NUMPREC`, `HHINCOME`, `PERNUM`, `CPSIDP`, `CPSIDV`, `ASECWT`, `ASECWTCVD`, `AGE`
 3. Select all ASEC samples (1972-2025)
 4. Download the `.dat.gz` and `.xml` codebook into `ipums_extract/`
 5. Run the processing script:
@@ -53,17 +53,21 @@ This reads the IPUMS extract, applies the methodology below, and writes `video/s
 
 ### Income measure
 
-Total household income (`HHINCOME`), adjusted for household size using an equivalence scale:
+Total household income (`HHINCOME`), adjusted for household size using the square-root equivalence scale and expressed as a 3-person equivalent household, following Pew Research Center practice:
 
 ```
-adjusted_income = household_income / sqrt(household_size) * sqrt(median_household_size)
+adjusted_income = household_income / sqrt(household_size) * sqrt(3)
 ```
 
-The median household size is computed per year using household-level weights (`ASECWTH`), capturing the secular decline from ~3 persons in the early 1970s to ~2 today.
+Household-size medians are still computed per year using household-level weights (`ASECWTH`) and exported as diagnostics, but they do not affect the published income series.
+
+After inflation adjustment, negative adjusted incomes are floored at $0 and treated as part of the first bar rather than shown as a separate negative-income range.
 
 ### Population
 
-Adults age 18+, weighted by ASEC person supplement weights (`ASECWT`). For survey year 2014, only the new-design sample (`HFLAG=1`) is used to avoid double-counting from the ASEC redesign split sample.
+Adults age 18+, weighted by ASEC person supplement weights (`ASECWT`). For survey year 2020, the pipeline uses `ASECWTCVD` when available because IPUMS recommends it for COVID-era ASEC nonresponse adjustment.
+
+For survey year 2014, only the redesigned income-question subsample (`HFLAG=1`) is used. That yields the point labeled 2013, which should be treated as a redesign break rather than a fully comparable continuation of the earlier series.
 
 ### Constant dollars
 

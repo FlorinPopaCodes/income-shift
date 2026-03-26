@@ -8,6 +8,7 @@ ipums_extract/
 .DS_Store
 *.log
 dist/
+__pycache__/
 video/bun.lock
 video/bun.lockb
 .claude/

@@ -12,9 +12,10 @@
 Process IPUMS CPS ASEC microdata into income distribution JSON for Remotion.
 
 Methodology:
-  - Unit: adults (age 18+), weighted by ASEC person weight (ASECWT)
-  - Size-adjust: income / sqrt(household_size) * sqrt(median_hhsize_for_year)
+  - Unit: adults (age 18+), weighted by ASECWT except YEAR=2020 uses ASECWTCVD
+  - Size-adjust: income / sqrt(household_size) * sqrt(3)
   - Deflate to 2024 constant dollars (R-CPI-U-RS / C-CPI-U hybrid)
+  - Floor negative real incomes at $0 for histogram + summary stats
   - Density: % per $1k (bar area = population share)
   - Middle-income band: 2/3 to 2x weighted median
 
@@ -29,11 +30,13 @@ Usage:
 
 import json
 import argparse
+import sys
 import numpy as np
 from pathlib import Path
 
 EXTRACT_DIR = Path("ipums_extract")
 DEFAULT_OUTPUT = "video/src/data.json"
+TARGET_HHSIZE = 3.0
 
 # Census Bureau's price index for deflating income, base Dec 1999 = 100.
 # Hybrid series matching Census P-60 reports:
@@ -118,6 +121,43 @@ def load_extract():
     return df
 
 
+def choose_person_weights(adults):
+    weights = adults["ASECWT"].values.astype(float).copy()
+    covid_mask = adults["YEAR"].values == 2020
+
+    if not covid_mask.any():
+        return weights
+
+    if "ASECWTCVD" not in adults.columns:
+        print(
+            "Warning: ASECWTCVD is missing from the extract; using ASECWT for YEAR=2020.",
+            file=sys.stderr,
+        )
+        return weights
+
+    covid_weights = adults["ASECWTCVD"].values.astype(float)
+    available_mask = covid_mask & ~np.isnan(covid_weights)
+
+    if not available_mask.any():
+        print(
+            "Warning: ASECWTCVD is empty for YEAR=2020; using ASECWT for that survey year.",
+            file=sys.stderr,
+        )
+        return weights
+
+    weights[available_mask] = covid_weights[available_mask]
+
+    missing_count = int(covid_mask.sum() - available_mask.sum())
+    if missing_count:
+        print(
+            f"Warning: ASECWTCVD missing on {missing_count:,} YEAR=2020 adult records; "
+            "falling back to ASECWT for those cases.",
+            file=sys.stderr,
+        )
+
+    return weights
+
+
 def process(df):
     # Filter adults 18+
     adults = df[df["AGE"] >= 18].copy()
@@ -127,15 +167,16 @@ def process(df):
     adults = adults[adults["HHINCOME"] < 99999999].copy()
     print(f"After income filter: {len(adults):,} records")
 
-    # 2014 ASEC redesign: split sample with both old (HFLAG=0) and new (HFLAG=1)
-    # designs. Keep only new design (HFLAG=1) for YEAR=2014 to avoid double-counting
-    # and maintain consistency with subsequent years.
+    # 2014 ASEC redesign: keep only the redesigned income-question subsample
+    # (HFLAG=1). This avoids mixing incompatible income questionnaires in the
+    # point labeled 2013.
     redesign_mask = (adults["YEAR"] == 2014) & (adults["HFLAG"] == 0)
     adults = adults[~redesign_mask].copy()
     print(f"After HFLAG filter: {len(adults):,} records")
 
     # Income year = survey year - 1 (ASEC conducted in March, reports prior year)
     adults["INCOME_YEAR"] = adults["YEAR"] - 1
+    adults["PERSON_WEIGHT"] = choose_person_weights(adults)
 
     # Compute weighted median household size per income year
     # Use household-level records (PERNUM==1) with household weight
@@ -151,18 +192,18 @@ def process(df):
           f"{min(median_hhsize_by_year.values()):.2f} - "
           f"{max(median_hhsize_by_year.values()):.2f}")
 
-    # Size-adjust income: HHINCOME / sqrt(NUMPREC) * sqrt(median_hhsize)
+    # Size-adjust income to a fixed 3-person household, following Pew.
     income_years = adults["INCOME_YEAR"].values
     hhsizes = adults["NUMPREC"].values.astype(float)
     raw_income = adults["HHINCOME"].values.astype(float)
 
-    median_hhsize_arr = np.array([median_hhsize_by_year[y] for y in income_years])
-    adjusted_income = raw_income / np.sqrt(hhsizes) * np.sqrt(median_hhsize_arr)
+    adjusted_income = raw_income / np.sqrt(hhsizes) * np.sqrt(TARGET_HHSIZE)
 
-    # Deflate to 2024 constant dollars
+    # Deflate to 2024 constant dollars, then floor negatives at zero so the
+    # histogram, median, mean, and middle-income thresholds all use one rule.
     deflators = np.array([DEFLATOR_BASE / CPI_INDEX.get(y, DEFLATOR_BASE)
                           for y in income_years])
-    real_income = adjusted_income * deflators
+    real_income = np.maximum(adjusted_income * deflators, 0.0)
     adults["REAL_INCOME"] = real_income
 
     # Process each year
@@ -174,7 +215,7 @@ def process(df):
 
         mask = income_years == income_year
         incomes = real_income[mask]
-        weights = adults["ASECWT"].values[mask]
+        weights = adults["PERSON_WEIGHT"].values[mask]
         total_weight = weights.sum()
 
         if total_weight == 0:

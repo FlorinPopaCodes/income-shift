@@ -25,7 +25,7 @@ export const TitleBlock: React.FC<Props> = ({ dim, layout }) => (
         color: color.textPrimary,
       }}
     >
-      Household income in 2024 dollars
+      Size-adjusted household income
     </div>
     <div
       style={{
@@ -36,7 +36,7 @@ export const TitleBlock: React.FC<Props> = ({ dim, layout }) => (
         marginTop: 4,
       }}
     >
-      % of adults · US income distribution 1971–2024
+      2024 dollars · 3-person equivalent · % of adults
     </div>
   </div>
 );
