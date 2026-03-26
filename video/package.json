@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "bunx remotion studio",
     "render": "bun run render.ts",
-    "render:heroes": "bun run render-heroes.ts",
     "render:landscape": "bunx remotion render landscape ../output/landscape.mp4",
     "render:square": "bunx remotion render square ../output/square.mp4",
     "render:vertical": "bunx remotion render vertical ../output/vertical.mp4"

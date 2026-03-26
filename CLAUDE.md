@@ -18,7 +18,3 @@ Credible, clear, understated.
 3. **Readable at a glance, rich on inspection** — The main story (distribution shift over 50 years) should land in 3 seconds. Stats, controls, and methodology reward closer reading.
 4. **Typographic hierarchy** — Use weight, size, and font family (serif for emphasis, sans for data) to guide the eye. Avoid color as the primary hierarchy tool.
 5. **Warmth without personality** — The palette should feel approachable and high-quality (not cold/corporate, not playful/branded). Academic confidence.
-
-### Workflow
-
-After any layout or visual change, regenerate the hero images used in the README: `cd video && bun run render:heroes`. This renders stills from the Remotion compositions into `output/hero-*.png`.
