@@ -40,10 +40,20 @@ export const ReferenceLine: React.FC<Props> = ({
 
   const clipRight = dim.margin.left + progress * dim.innerW;
 
-  // Badge position: lerp from drawing edge to peak as progress increases
+  // Badge position: right shoulder of the curve (where density drops to ~50% of peak
+  // on the descending side) — clears the year watermark in the upper-left.
   const peakIdx = lineDensities.indexOf(Math.max(...lineDensities));
-  const peakX = (xPos(binEdges[peakIdx]) + xPos(binEdges[peakIdx + 1])) / 2;
-  const peakY = yPos(lineDensities[peakIdx]);
+  const peakDensity = lineDensities[peakIdx];
+  let shoulderIdx = peakIdx;
+  for (let i = peakIdx + 1; i < lineDensities.length; i++) {
+    if (lineDensities[i] < peakDensity * 0.5) {
+      shoulderIdx = i;
+      break;
+    }
+  }
+  const shoulderX =
+    (xPos(binEdges[shoulderIdx]) + xPos(binEdges[shoulderIdx + 1])) / 2;
+  const shoulderY = yPos(lineDensities[shoulderIdx]);
 
   const lastVisibleBin = Math.min(
     Math.floor(progress * (lineDensities.length - 1)),
@@ -52,10 +62,13 @@ export const ReferenceLine: React.FC<Props> = ({
   const edgeX = (xPos(binEdges[lastVisibleBin]) + xPos(binEdges[lastVisibleBin + 1])) / 2;
   const edgeY = yPos(lineDensities[lastVisibleBin]);
 
-  // Smooth transition: once peak is drawn (~40%), start blending toward peak position
-  const peakDrawn = Math.min(1, Math.max(0, (progress - 0.4) / 0.4));
-  const badgeCenterX = lerp(edgeX, peakX, peakDrawn);
-  const badgeCenterY = lerp(edgeY, peakY, peakDrawn);
+  // Smooth transition: once shoulder bin is drawn, start blending toward shoulder
+  const shoulderDrawn = Math.min(
+    1,
+    Math.max(0, (progress - 0.4) / 0.4),
+  );
+  const badgeCenterX = lerp(edgeX, shoulderX, shoulderDrawn);
+  const badgeCenterY = lerp(edgeY, shoulderY, shoulderDrawn);
 
   const labelW = 52;
   const labelH = 24;
