@@ -22,7 +22,6 @@ export const SourceLine: React.FC<Props> = ({ dim, layout, opacity }) => (
       opacity,
     }}
   >
-    Source: IPUMS CPS ASEC · Constant 2024 dollars (CPI-U-RS / C-CPI-U) · Adults
-    18+ · Size-adjusted
+    Source: IPUMS CPS · 2024 dollars · Adults 18+
   </div>
 );

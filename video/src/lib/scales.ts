@@ -40,7 +40,7 @@ export const X_TICKS = [
   { v: 210_000, label: "$210k" },
   { v: 280_000, label: "$280k" },
   { v: 500_000, label: "$500k" },
-  { v: 1_000_000, label: "$1M" },
+  { v: 1_000_000, label: "$1M+" },
 ];
 
 // Compute max density across all years (bars + KDE) for y-axis scaling

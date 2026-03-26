@@ -53,8 +53,8 @@ export const ReferenceLine: React.FC<Props> = ({
   const badgeCenterX = lerp(edgeX, peakX, peakDrawn);
   const badgeCenterY = lerp(edgeY, peakY, peakDrawn);
 
-  const labelW = 48;
-  const labelH = 22;
+  const labelW = 52;
+  const labelH = 24;
   const badgeX = badgeCenterX + 8;
   const badgeY = badgeCenterY - labelH - 8;
 
@@ -99,7 +99,7 @@ export const ReferenceLine: React.FC<Props> = ({
             textAnchor="middle"
             dominantBaseline="middle"
             fill={color.refLine}
-            fontSize={dim.axisSize - 4}
+            fontSize={dim.axisSize - 2}
             fontFamily={SANS}
             fontWeight={600}
             style={{ fontVariantNumeric: "tabular-nums" }}

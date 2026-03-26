@@ -7,7 +7,7 @@ export function getDimensions(
 ): ChartDimensions {
   switch (layout) {
     case "landscape": {
-      const margin = { top: 110, right: 50, bottom: 70, left: 70 };
+      const margin = { top: 110, right: 50, bottom: 70, left: 40 };
       return {
         width: videoW,
         height: videoH,
@@ -24,7 +24,7 @@ export function getDimensions(
       };
     }
     case "square": {
-      const margin = { top: 100, right: 40, bottom: 60, left: 60 };
+      const margin = { top: 100, right: 40, bottom: 60, left: 36 };
       return {
         width: videoW,
         height: videoH,
@@ -41,7 +41,7 @@ export function getDimensions(
       };
     }
     case "vertical": {
-      const margin = { top: 90, right: 40, bottom: 60, left: 60 };
+      const margin = { top: 90, right: 40, bottom: 60, left: 36 };
       const chartH = videoH * 0.55;
       return {
         width: videoW,

@@ -16,7 +16,7 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
 
   return (
     <g opacity={opacity}>
-      {/* Horizontal grid lines */}
+      {/* Horizontal grid lines (no numeric labels — relative heights tell the story) */}
       {yTicks.map((v) => (
         <line
           key={v}
@@ -61,23 +61,6 @@ export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
             {label}
           </text>
         </g>
-      ))}
-
-      {/* Y-axis labels */}
-      {yTicks.map((v) => (
-        <text
-          key={v}
-          x={dim.margin.left - 8}
-          y={yPos(v) + 4}
-          textAnchor="end"
-          fill={color.textSecondary}
-          fontSize={dim.axisSize}
-          fontWeight={400}
-          fontFamily={SANS}
-          fontVariantNumeric="tabular-nums"
-        >
-          {v}%
-        </text>
       ))}
     </g>
   );

@@ -36,7 +36,7 @@ export const MiddleIncomeBand: React.FC<Props> = ({
         y={dim.margin.top + 20}
         textAnchor="middle"
         fill={color.textTertiary}
-        fontSize={dim.axisSize - 2}
+        fontSize={dim.axisSize}
         fontWeight={400}
         fontFamily={SANS}
       >

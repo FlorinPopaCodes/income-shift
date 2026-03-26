@@ -31,7 +31,7 @@ export const color = {
 // Opacities
 export const opacity = {
   bar: 0.75,
-  band: 0.25,
+  band: 0.30,
   watermark: 0.55,
 } as const;
 
