@@ -1,24 +1,26 @@
 import type { DataFile } from "../types";
 
-// Zone layout: 4 equal visual zones + small overflow
+// Zone layout: 3 main zones + smaller zone 4 + overflow
 const ZONES = [
   { lo: 0, hi: 70_000 },
   { lo: 70_000, hi: 140_000 },
   { lo: 140_000, hi: 280_000 },
-  { lo: 280_000, hi: 1_000_000 },
+  { lo: 280_000, hi: 500_000 },
 ];
-const ZONE_FRAC = 0.24;
-const OVERFLOW_FRAC = 1 - ZONE_FRAC * 4; // 0.04
+const ZONE_FRACS = [0.27, 0.27, 0.27, 0.15];
+const ZONE_STARTS = [0, 0.27, 0.54, 0.81];
+const OVERFLOW_START = 0.96;
+const OVERFLOW_FRAC = 1 - OVERFLOW_START; // 0.04
 
 export function dollarToXFrac(d: number): number {
   for (let z = 0; z < ZONES.length; z++) {
     if (d <= ZONES[z].hi) {
       const t = (d - ZONES[z].lo) / (ZONES[z].hi - ZONES[z].lo);
-      return z * ZONE_FRAC + t * ZONE_FRAC;
+      return ZONE_STARTS[z] + t * ZONE_FRACS[z];
     }
   }
-  // Overflow: $1M+, clamp to the overflow region
-  return ZONE_FRAC * 4 + OVERFLOW_FRAC * 0.5;
+  // Overflow: $500k+
+  return OVERFLOW_START + OVERFLOW_FRAC * 0.5;
 }
 
 // Build bin edges from data
@@ -39,8 +41,8 @@ export const X_TICKS = [
   { v: 140_000, label: "$140k" },
   { v: 210_000, label: "$210k" },
   { v: 280_000, label: "$280k" },
-  { v: 500_000, label: "$500k" },
-  { v: 1_000_000, label: "$1M+" },
+  { v: 390_000, label: "$390k" },
+  { v: 500_000, label: "$500k+" },
 ];
 
 // Compute max density across all years (bars + KDE) for y-axis scaling

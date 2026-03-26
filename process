@@ -64,31 +64,31 @@ CPI_INDEX = {
 BASE_YEAR = 2024
 DEFLATOR_BASE = CPI_INDEX[BASE_YEAR]
 
-# Bin edges: 4 equal visual zones + overflow
-# Zone 1: $0-70k    (14 bins x $5k)
-# Zone 2: $70k-140k (14 bins x $5k)
-# Zone 3: $140k-280k(14 bins x $10k)
-# Zone 4: $280k-1M  (12 bins x $60k)
-# Overflow: $1M+     (1 bin, notional $500k)
+# Bin edges: 3 zones + small zone 4 + overflow
+# Zone 1: $0-70k     (14 bins x $5k)
+# Zone 2: $70k-140k  (14 bins x $5k)
+# Zone 3: $140k-280k (14 bins x $10k)
+# Zone 4: $280k-500k (11 bins x $20k)
+# Overflow: $500k+    (1 bin, notional $500k)
 BIN_EDGES = np.array(
     list(range(0, 70_001, 5_000))            # 0, 5k, ..., 70k  (15 edges)
     + list(range(75_000, 140_001, 5_000))    # 75k, ..., 140k   (14 edges)
     + list(range(150_000, 280_001, 10_000))  # 150k, ..., 280k  (14 edges)
-    + list(range(340_000, 1_000_001, 60_000)),  # 340k, ..., 1M (12 edges)
+    + list(range(300_000, 500_001, 20_000)),  # 300k, ..., 500k  (11 edges)
     dtype=np.float64,
 )
-N_EDGES = len(BIN_EDGES)  # 55 edges -> 54 bounded bins + 1 overflow = 55 bins
-N_BINS = N_EDGES  # 55 total (54 bounded + 1 overflow)
+N_EDGES = len(BIN_EDGES)  # 54 edges -> 53 bounded bins + 1 overflow = 54 bins
+N_BINS = N_EDGES  # 54 total (53 bounded + 1 overflow)
 
 # Bin widths in $k for density
 BIN_WIDTHS_K = []
 for i in range(N_EDGES - 1):
     BIN_WIDTHS_K.append((BIN_EDGES[i + 1] - BIN_EDGES[i]) / 1000)
-BIN_WIDTHS_K.append(500.0)  # $1M+ notional: treat as $1M-$1.5M
+BIN_WIDTHS_K.append(500.0)  # $500k+ notional width
 
 # KDE config
 KDE_N_POINTS = 200
-KDE_X_MAX = 500_000  # $500k
+KDE_X_MAX = 400_000  # $400k (covers main distribution)
 
 
 def weighted_median(values, weights):
