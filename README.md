@@ -1,6 +1,6 @@
 # The Shifting Shape of American Income
 
-Animated visualization of how US household income distribution has changed from 1971 to 2024, rendered as shareable video. Inspired by [Alan Smith's work at the Financial Times](https://www.ft.com/content/98ce14ee-99a0-11e5-95c7-d47aa298f769) using Pew Research Center methodology.
+Animated visualization of how US household income distribution has changed from 1971 to 2024, rendered as shareable video. Inspired by [Alan Smith's work at the Financial Times](https://www.ft.com/content/98ce14ee-99a6-11e5-95c7-d47aa298f769?syn-25a6b1a6=1) using Pew Research Center methodology.
 
 ![2024 income distribution with 1971 reference](output/hero-landscape.png)
 
