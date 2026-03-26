@@ -5,17 +5,15 @@ import type { ChartDimensions, Layout } from "../types";
 interface Props {
   dim: ChartDimensions;
   layout: Layout;
-  opacity: number;
 }
 
-export const TitleBlock: React.FC<Props> = ({ dim, layout, opacity }) => (
+export const TitleBlock: React.FC<Props> = ({ dim, layout }) => (
   <div
     style={{
       position: "absolute",
       top: layout === "vertical" ? 60 : 24,
       left: dim.margin.left,
       right: dim.margin.right,
-      opacity,
     }}
   >
     <div

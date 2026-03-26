@@ -11,13 +11,6 @@ const SETUP_END = 89;
 const SWEEP_START = 90;
 const SWEEP_END = 359;
 
-const ALL_VISIBLE: AnimationState["setupOpacity"] = {
-  title: 1,
-  axes: 1,
-  middleBand: 1,
-  data: 1,
-};
-
 export function getAnimationState(
   frame: number,
   _fps: number,
@@ -31,12 +24,7 @@ export function getAnimationState(
   });
 
   if (frame <= SETUP_END) {
-    return {
-      phase: "setup",
-      yearProgress: 0,
-      setupOpacity: ALL_VISIBLE,
-      refLineProgress,
-    };
+    return { phase: "setup", yearProgress: 0, refLineProgress };
   }
 
   if (frame <= SWEEP_END) {
@@ -50,18 +38,8 @@ export function getAnimationState(
     const easedFrac = easeInOutCubic(yearFrac);
     const yearProgress = (yearFloor + easedFrac) / (numYears - 1);
 
-    return {
-      phase: "sweep",
-      yearProgress,
-      setupOpacity: ALL_VISIBLE,
-      refLineProgress: 1,
-    };
+    return { phase: "sweep", yearProgress, refLineProgress: 1 };
   }
 
-  return {
-    phase: "hold",
-    yearProgress: 1,
-    setupOpacity: ALL_VISIBLE,
-    refLineProgress: 1,
-  };
+  return { phase: "hold", yearProgress: 1, refLineProgress: 1 };
 }

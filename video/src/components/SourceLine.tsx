@@ -5,10 +5,9 @@ import type { ChartDimensions, Layout } from "../types";
 interface Props {
   dim: ChartDimensions;
   layout: Layout;
-  opacity: number;
 }
 
-export const SourceLine: React.FC<Props> = ({ dim, layout, opacity }) => (
+export const SourceLine: React.FC<Props> = ({ dim, layout }) => (
   <div
     style={{
       position: "absolute",
@@ -19,7 +18,6 @@ export const SourceLine: React.FC<Props> = ({ dim, layout, opacity }) => (
       color: color.textTertiary,
       fontFamily: SANS,
       fontWeight: 400,
-      opacity,
     }}
   >
     Source: IPUMS CPS · 2024 dollars · Adults 18+

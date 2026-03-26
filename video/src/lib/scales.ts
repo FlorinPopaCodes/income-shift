@@ -44,14 +44,11 @@ export const X_TICKS = [
   { v: 500_000, label: "$500k+" },
 ];
 
-// Compute max density across all years (bars + KDE) for y-axis scaling
+// Compute max bar density across all years for y-axis scaling
 export function computeYMax(data: DataFile): number {
   let max = 0;
   for (const year of data.years) {
     for (const d of year.b) {
-      if (d > max) max = d;
-    }
-    for (const d of year.k) {
       if (d > max) max = d;
     }
   }

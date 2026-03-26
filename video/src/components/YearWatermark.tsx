@@ -5,10 +5,9 @@ import type { ChartDimensions } from "../types";
 interface Props {
   dim: ChartDimensions;
   year: number;
-  opacity: number;
 }
 
-export const YearWatermark: React.FC<Props> = ({ dim, year, opacity }) => (
+export const YearWatermark: React.FC<Props> = ({ dim, year }) => (
   <div
     style={{
       position: "absolute",
@@ -18,7 +17,7 @@ export const YearWatermark: React.FC<Props> = ({ dim, year, opacity }) => (
       fontSize: dim.yearSize,
       fontWeight: 700,
       color: color.watermark,
-      opacity: opacity * op.watermark,
+      opacity: op.watermark,
       lineHeight: 1,
       zIndex: 1,
       fontVariantNumeric: "tabular-nums",

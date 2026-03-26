@@ -7,22 +7,14 @@ interface Props {
   dim: ChartDimensions;
   ml: number;
   mu: number;
-  yMax: number;
-  opacity: number;
 }
 
-export const MiddleIncomeBand: React.FC<Props> = ({
-  dim,
-  ml,
-  mu,
-  yMax: _yMax,
-  opacity,
-}) => {
+export const MiddleIncomeBand: React.FC<Props> = ({ dim, ml, mu }) => {
   const mlX = dim.margin.left + dollarToXFrac(Math.max(0, ml)) * dim.innerW;
   const muX = dim.margin.left + dollarToXFrac(mu) * dim.innerW;
 
   return (
-    <g opacity={opacity}>
+    <g>
       <rect
         x={mlX}
         y={dim.margin.top}

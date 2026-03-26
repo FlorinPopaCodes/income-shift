@@ -6,7 +6,6 @@
 #     "pandas",
 #     "numpy",
 #     "pyarrow",
-#     "scipy",
 # ]
 # ///
 """
@@ -18,7 +17,6 @@ Methodology:
   - Deflate to 2024 constant dollars (R-CPI-U-RS / C-CPI-U hybrid)
   - Density: % per $1k (bar area = population share)
   - Middle-income band: 2/3 to 2x weighted median
-  - KDE: weighted Gaussian, 200 points, $0-$500k
 
 Data source:
   Sarah Flood et al. IPUMS CPS: Version 13.0 [dataset].
@@ -29,7 +27,6 @@ Usage:
   ./process --output data.json
 """
 
-import sys
 import json
 import argparse
 import numpy as np
@@ -86,10 +83,6 @@ for i in range(N_EDGES - 1):
     BIN_WIDTHS_K.append((BIN_EDGES[i + 1] - BIN_EDGES[i]) / 1000)
 BIN_WIDTHS_K.append(500.0)  # $500k+ notional width
 
-# KDE config
-KDE_N_POINTS = 200
-KDE_X_MAX = 400_000  # $400k (covers main distribution)
-
 
 def weighted_median(values, weights):
     order = np.argsort(values)
@@ -123,29 +116,6 @@ def load_extract():
     print(f"  Cached to {cache}")
     print(f"  {len(df):,} person records, {df['YEAR'].nunique()} survey years")
     return df
-
-
-def compute_kde(incomes, weights):
-    from scipy.stats import gaussian_kde
-
-    eval_points = np.linspace(0, KDE_X_MAX, KDE_N_POINTS)
-
-    mask = (incomes >= 0) & (incomes <= KDE_X_MAX * 2) & (weights > 0)
-    inc = incomes[mask]
-    wt = weights[mask]
-
-    if len(inc) < 10:
-        return [0.0] * KDE_N_POINTS
-
-    # scipy gaussian_kde expects weights that sum to len(data)
-    wt_norm = wt * len(wt) / wt.sum()
-    kde = gaussian_kde(inc, weights=wt_norm, bw_method="silverman")
-
-    # Convert: kde returns density per dollar -> we need % per $1k
-    # density_per_dollar * 1000 = density_per_1k; * 100 = percentage
-    kde_values = kde(eval_points) * 100_000
-
-    return [round(float(v), 4) for v in kde_values]
 
 
 def process(df):
@@ -228,15 +198,11 @@ def process(df):
             pct = float(weights[bin_idx == i].sum() / total_weight * 100)
             bars.append(round(pct / BIN_WIDTHS_K[i], 4))
 
-        # KDE
-        kde_values = compute_kde(incomes, weights)
-
         total_adults_k = round(float(total_weight) / 1000)
 
         results.append({
             "y": int(income_year),
             "b": bars,
-            "k": kde_values,
             "m": round(float(w_median)),
             "n": round(float(w_mean)),
             "h": total_adults_k,
@@ -268,8 +234,6 @@ def main():
 
     output = {
         "bin_widths_k": [float(w) for w in BIN_WIDTHS_K],
-        "kde_x_range": [0, KDE_X_MAX / 1000],
-        "kde_n_points": KDE_N_POINTS,
         "years": results,
     }
 

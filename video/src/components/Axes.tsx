@@ -7,15 +7,14 @@ interface Props {
   dim: ChartDimensions;
   yMax: number;
   yTicks: number[];
-  opacity: number;
 }
 
-export const Axes: React.FC<Props> = ({ dim, yMax, yTicks, opacity }) => {
+export const Axes: React.FC<Props> = ({ dim, yMax, yTicks }) => {
   const xPos = (d: number) => dim.margin.left + dollarToXFrac(d) * dim.innerW;
   const yPos = (v: number) => dim.margin.top + dim.innerH * (1 - v / yMax);
 
   return (
-    <g opacity={opacity}>
+    <g>
       {/* Horizontal grid lines (no numeric labels — relative heights tell the story) */}
       {yTicks.map((v) => (
         <line

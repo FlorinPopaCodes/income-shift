@@ -8,7 +8,6 @@ interface Props {
   densities: number[];
   binEdges: number[];
   yMax: number;
-  opacity: number;
 }
 
 export const Bars: React.FC<Props> = ({
@@ -16,12 +15,11 @@ export const Bars: React.FC<Props> = ({
   densities,
   binEdges,
   yMax,
-  opacity,
 }) => {
   const xPos = (d: number) => dim.margin.left + dollarToXFrac(d) * dim.innerW;
 
   return (
-    <g opacity={opacity}>
+    <g>
       {densities.map((density, i) => {
         const bx = xPos(binEdges[i]);
         const bw = (xPos(binEdges[i + 1]) - xPos(binEdges[i])) * chart.barGap;

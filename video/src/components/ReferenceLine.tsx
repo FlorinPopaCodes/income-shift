@@ -9,7 +9,6 @@ interface Props {
   densities: number[];
   binEdges: number[];
   yMax: number;
-  opacity: number;
   year: number;
   progress: number;
 }
@@ -19,7 +18,6 @@ export const ReferenceLine: React.FC<Props> = ({
   densities,
   binEdges,
   yMax,
-  opacity,
   year,
   progress,
 }) => {
@@ -61,7 +59,7 @@ export const ReferenceLine: React.FC<Props> = ({
   const clipId = "ref-line-clip";
 
   return (
-    <g opacity={opacity}>
+    <g>
       <defs>
         <clipPath id={clipId}>
           <rect

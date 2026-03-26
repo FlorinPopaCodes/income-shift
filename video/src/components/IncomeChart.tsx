@@ -44,8 +44,8 @@ export const IncomeChart: React.FC<{ layout: Layout }> = ({ layout }) => {
         overflow: "hidden",
       }}
     >
-      <TitleBlock dim={dim} layout={layout} opacity={state.setupOpacity.title} />
-      <YearWatermark dim={dim} year={d.y} opacity={state.setupOpacity.data} />
+      <TitleBlock dim={dim} layout={layout} />
+      <YearWatermark dim={dim} year={d.y} />
       <ChartSVG
         dim={dim}
         densities={d.b}
@@ -56,10 +56,9 @@ export const IncomeChart: React.FC<{ layout: Layout }> = ({ layout }) => {
         yTicks={yTicks}
         ml={d.ml}
         mu={d.mu}
-        setupOpacity={state.setupOpacity}
         refLineProgress={state.refLineProgress}
       />
-      <SourceLine dim={dim} layout={layout} opacity={state.setupOpacity.axes} />
+      <SourceLine dim={dim} layout={layout} />
     </div>
   );
 };

@@ -22,7 +22,6 @@ export function lerpYear(years: YearData[], t: number): YearData {
   return {
     y: lerp(a.y, b.y, frac),
     b: a.b.map((v, i) => lerp(v, b.b[i], frac)),
-    k: a.k.map((v, i) => lerp(v, b.k[i], frac)),
     m: lerp(a.m, b.m, frac),
     n: lerp(a.n, b.n, frac),
     h: lerp(a.h, b.h, frac),

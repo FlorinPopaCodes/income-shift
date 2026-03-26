@@ -1,5 +1,5 @@
 import React from "react";
-import type { ChartDimensions, SetupOpacity } from "../types";
+import type { ChartDimensions } from "../types";
 import { Axes } from "./Axes";
 import { MiddleIncomeBand } from "./MiddleIncomeBand";
 import { Bars } from "./Bars";
@@ -15,7 +15,6 @@ interface Props {
   yTicks: number[];
   ml: number;
   mu: number;
-  setupOpacity: SetupOpacity;
   refLineProgress: number;
 }
 
@@ -29,7 +28,6 @@ export const ChartSVG: React.FC<Props> = ({
   yTicks,
   ml,
   mu,
-  setupOpacity,
   refLineProgress,
 }) => {
   const svgH = dim.margin.top + dim.innerH + dim.margin.bottom;
@@ -44,32 +42,19 @@ export const ChartSVG: React.FC<Props> = ({
         left: 0,
       }}
     >
-      <Axes
-        dim={dim}
-        yMax={yMax}
-        yTicks={yTicks}
-        opacity={setupOpacity.axes}
-      />
-      <MiddleIncomeBand
-        dim={dim}
-        ml={ml}
-        mu={mu}
-        yMax={yMax}
-        opacity={setupOpacity.middleBand}
-      />
+      <Axes dim={dim} yMax={yMax} yTicks={yTicks} />
+      <MiddleIncomeBand dim={dim} ml={ml} mu={mu} />
       <Bars
         dim={dim}
         densities={densities}
         binEdges={binEdges}
         yMax={yMax}
-        opacity={setupOpacity.data}
       />
       <ReferenceLine
         dim={dim}
         densities={refDensities}
         binEdges={binEdges}
         yMax={yMax}
-        opacity={setupOpacity.data}
         year={refYear}
         progress={refLineProgress}
       />
