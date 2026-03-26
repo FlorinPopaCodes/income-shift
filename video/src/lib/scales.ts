@@ -41,7 +41,6 @@ export const X_TICKS = [
   { v: 140_000, label: "$140k" },
   { v: 210_000, label: "$210k" },
   { v: 280_000, label: "$280k" },
-  { v: 390_000, label: "$390k" },
   { v: 500_000, label: "$500k+" },
 ];
 
