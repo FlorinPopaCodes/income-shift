@@ -1,0 +1,14 @@
+node_modules/
+output/*.mp4
+output/*.webm
+output/test-*
+output/polish-*
+output/v3-*
+ipums_extract/
+.DS_Store
+*.log
+dist/
+video/bun.lock
+video/bun.lockb
+.claude/
+.impeccable.md

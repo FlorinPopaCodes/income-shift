@@ -1,0 +1,24 @@
+{
+  "name": "income-shift-video",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bunx remotion studio",
+    "render": "bun run render.ts",
+    "render:landscape": "bunx remotion render landscape ../output/landscape.mp4",
+    "render:square": "bunx remotion render square ../output/square.mp4",
+    "render:vertical": "bunx remotion render vertical ../output/vertical.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.440",
+    "@remotion/google-fonts": "^4.0.440",
+    "@remotion/renderer": "^4.0.440",
+    "@remotion/bundler": "^4.0.440",
+    "@types/react": "^19.2.14",
+    "remotion": "^4.0.440"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

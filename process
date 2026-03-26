@@ -1,0 +1,286 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ipumspy",
+#     "pandas",
+#     "numpy",
+#     "pyarrow",
+#     "scipy",
+# ]
+# ///
+"""
+Process IPUMS CPS ASEC microdata into income distribution JSON for Remotion.
+
+Methodology:
+  - Unit: adults (age 18+), weighted by ASEC person weight (ASECWT)
+  - Size-adjust: income / sqrt(household_size) * sqrt(median_hhsize_for_year)
+  - Deflate to 2024 constant dollars (R-CPI-U-RS / C-CPI-U hybrid)
+  - Density: % per $1k (bar area = population share)
+  - Middle-income band: 2/3 to 2x weighted median
+  - KDE: weighted Gaussian, 200 points, $0-$500k
+
+Data source:
+  Sarah Flood et al. IPUMS CPS: Version 13.0 [dataset].
+  Minneapolis, MN: IPUMS, 2025. https://doi.org/10.18128/D030.V13.0
+
+Usage:
+  ./process                  # reads from ipums_extract/
+  ./process --output data.json
+"""
+
+import sys
+import json
+import argparse
+import numpy as np
+from pathlib import Path
+
+EXTRACT_DIR = Path("ipums_extract")
+DEFAULT_OUTPUT = "video/src/data.json"
+
+# Census Bureau's price index for deflating income, base Dec 1999 = 100.
+# Hybrid series matching Census P-60 reports:
+#   1967-1977: CPI-U-X1 (experimental, rental equivalence)
+#   1978-1999: R-CPI-U-RS (BLS research series)
+#   2000-2022: C-CPI-U (chained CPI, final/revised)
+#
+# 1967-2022: Census Table P-60/279
+# 2023-2024: estimated from FRED C-CPI-U (series SUUR0000SA0)
+CPI_INDEX = {
+    1967: 22.7, 1968: 23.6, 1969: 24.6, 1970: 25.8, 1971: 26.9,
+    1972: 27.8, 1973: 29.5, 1974: 32.4, 1975: 35.1, 1976: 37.1,
+    1977: 39.5, 1978: 42.2, 1979: 46.2, 1980: 51.3, 1981: 56.2,
+    1982: 59.6, 1983: 62.1, 1984: 64.7, 1985: 66.9, 1986: 68.0,
+    1987: 70.3, 1988: 72.9, 1989: 76.1, 1990: 79.8, 1991: 82.7,
+    1992: 84.8, 1993: 86.9, 1994: 88.8, 1995: 90.9, 1996: 93.3,
+    1997: 95.3, 1998: 96.6, 1999: 98.6, 2000: 102.0, 2001: 104.3,
+    2002: 105.6, 2003: 107.8, 2004: 110.5, 2005: 113.7, 2006: 117.0,
+    2007: 120.0, 2008: 124.4, 2009: 123.9, 2010: 125.6, 2011: 129.5,
+    2012: 132.0, 2013: 133.6, 2014: 135.5, 2015: 135.4, 2016: 136.6,
+    2017: 139.0, 2018: 141.8, 2019: 143.9, 2020: 145.4, 2021: 152.0,
+    2022: 163.9,
+    2023: 170.0, 2024: 174.4,
+}
+BASE_YEAR = 2024
+DEFLATOR_BASE = CPI_INDEX[BASE_YEAR]
+
+# Bin edges: 4 equal visual zones + overflow
+# Zone 1: $0-70k    (14 bins x $5k)
+# Zone 2: $70k-140k (14 bins x $5k)
+# Zone 3: $140k-280k(14 bins x $10k)
+# Zone 4: $280k-1M  (12 bins x $60k)
+# Overflow: $1M+     (1 bin, notional $500k)
+BIN_EDGES = np.array(
+    list(range(0, 70_001, 5_000))            # 0, 5k, ..., 70k  (15 edges)
+    + list(range(75_000, 140_001, 5_000))    # 75k, ..., 140k   (14 edges)
+    + list(range(150_000, 280_001, 10_000))  # 150k, ..., 280k  (14 edges)
+    + list(range(340_000, 1_000_001, 60_000)),  # 340k, ..., 1M (12 edges)
+    dtype=np.float64,
+)
+N_EDGES = len(BIN_EDGES)  # 55 edges -> 54 bounded bins + 1 overflow = 55 bins
+N_BINS = N_EDGES  # 55 total (54 bounded + 1 overflow)
+
+# Bin widths in $k for density
+BIN_WIDTHS_K = []
+for i in range(N_EDGES - 1):
+    BIN_WIDTHS_K.append((BIN_EDGES[i + 1] - BIN_EDGES[i]) / 1000)
+BIN_WIDTHS_K.append(500.0)  # $1M+ notional: treat as $1M-$1.5M
+
+# KDE config
+KDE_N_POINTS = 200
+KDE_X_MAX = 500_000  # $500k
+
+
+def weighted_median(values, weights):
+    order = np.argsort(values)
+    sorted_v = values[order]
+    sorted_w = weights[order]
+    cum_w = np.cumsum(sorted_w)
+    idx = np.searchsorted(cum_w, cum_w[-1] / 2)
+    return sorted_v[min(idx, len(sorted_v) - 1)]
+
+
+def load_extract():
+    import pandas as pd
+
+    cache = EXTRACT_DIR / "cached.parquet"
+    if cache.exists():
+        dat_files = list(EXTRACT_DIR.glob("*.dat.gz"))
+        if dat_files and cache.stat().st_mtime >= dat_files[0].stat().st_mtime:
+            print(f"Reading {cache} (cached)...")
+            df = pd.read_parquet(cache)
+            print(f"  {len(df):,} person records, {df['YEAR'].nunique()} survey years")
+            return df
+
+    from ipumspy import readers
+
+    ddi_file = list(EXTRACT_DIR.glob("*.xml"))[0]
+    dat_file = list(EXTRACT_DIR.glob("*.dat.gz"))[0]
+    print(f"Reading {dat_file} (first run, caching to parquet)...")
+    ddi = readers.read_ipums_ddi(ddi_file)
+    df = readers.read_microdata(ddi, dat_file)
+    df.to_parquet(cache)
+    print(f"  Cached to {cache}")
+    print(f"  {len(df):,} person records, {df['YEAR'].nunique()} survey years")
+    return df
+
+
+def compute_kde(incomes, weights):
+    from scipy.stats import gaussian_kde
+
+    eval_points = np.linspace(0, KDE_X_MAX, KDE_N_POINTS)
+
+    mask = (incomes >= 0) & (incomes <= KDE_X_MAX * 2) & (weights > 0)
+    inc = incomes[mask]
+    wt = weights[mask]
+
+    if len(inc) < 10:
+        return [0.0] * KDE_N_POINTS
+
+    # scipy gaussian_kde expects weights that sum to len(data)
+    wt_norm = wt * len(wt) / wt.sum()
+    kde = gaussian_kde(inc, weights=wt_norm, bw_method="silverman")
+
+    # Convert: kde returns density per dollar -> we need % per $1k
+    # density_per_dollar * 1000 = density_per_1k; * 100 = percentage
+    kde_values = kde(eval_points) * 100_000
+
+    return [round(float(v), 4) for v in kde_values]
+
+
+def process(df):
+    # Filter adults 18+
+    adults = df[df["AGE"] >= 18].copy()
+    print(f"\nAdults (18+): {len(adults):,} records")
+
+    # Exclude NIU (Not in Universe) for HHINCOME
+    adults = adults[adults["HHINCOME"] < 99999999].copy()
+    print(f"After income filter: {len(adults):,} records")
+
+    # 2014 ASEC redesign: split sample with both old (HFLAG=0) and new (HFLAG=1)
+    # designs. Keep only new design (HFLAG=1) for YEAR=2014 to avoid double-counting
+    # and maintain consistency with subsequent years.
+    redesign_mask = (adults["YEAR"] == 2014) & (adults["HFLAG"] == 0)
+    adults = adults[~redesign_mask].copy()
+    print(f"After HFLAG filter: {len(adults):,} records")
+
+    # Income year = survey year - 1 (ASEC conducted in March, reports prior year)
+    adults["INCOME_YEAR"] = adults["YEAR"] - 1
+
+    # Compute weighted median household size per income year
+    # Use household-level records (PERNUM==1) with household weight
+    hh_records = adults[adults["PERNUM"] == 1].copy()
+    median_hhsize_by_year = {}
+    for iy in sorted(hh_records["INCOME_YEAR"].unique()):
+        mask = hh_records["INCOME_YEAR"] == iy
+        sizes = hh_records.loc[mask, "NUMPREC"].values.astype(float)
+        wts = hh_records.loc[mask, "ASECWTH"].values.astype(float)
+        median_hhsize_by_year[iy] = float(weighted_median(sizes, wts))
+
+    print(f"\nMedian household size range: "
+          f"{min(median_hhsize_by_year.values()):.2f} - "
+          f"{max(median_hhsize_by_year.values()):.2f}")
+
+    # Size-adjust income: HHINCOME / sqrt(NUMPREC) * sqrt(median_hhsize)
+    income_years = adults["INCOME_YEAR"].values
+    hhsizes = adults["NUMPREC"].values.astype(float)
+    raw_income = adults["HHINCOME"].values.astype(float)
+
+    median_hhsize_arr = np.array([median_hhsize_by_year[y] for y in income_years])
+    adjusted_income = raw_income / np.sqrt(hhsizes) * np.sqrt(median_hhsize_arr)
+
+    # Deflate to 2024 constant dollars
+    deflators = np.array([DEFLATOR_BASE / CPI_INDEX.get(y, DEFLATOR_BASE)
+                          for y in income_years])
+    real_income = adjusted_income * deflators
+    adults["REAL_INCOME"] = real_income
+
+    # Process each year
+    results = []
+
+    for income_year in sorted(adults["INCOME_YEAR"].unique()):
+        if income_year < 1971 or income_year > 2024:
+            continue
+
+        mask = income_years == income_year
+        incomes = real_income[mask]
+        weights = adults["ASECWT"].values[mask]
+        total_weight = weights.sum()
+
+        if total_weight == 0:
+            continue
+
+        # Weighted median and mean of size-adjusted real income
+        w_median = weighted_median(incomes, weights)
+        w_mean = float(np.dot(incomes, weights) / total_weight)
+
+        # Middle-income band
+        mid_low = w_median * 2 / 3
+        mid_high = w_median * 2
+
+        # Bin into histogram
+        bin_idx = np.searchsorted(BIN_EDGES, incomes, side="right") - 1
+        bin_idx = np.clip(bin_idx, 0, N_BINS - 1)
+
+        # Compute density: % per $1k
+        bars = []
+        for i in range(N_BINS):
+            pct = float(weights[bin_idx == i].sum() / total_weight * 100)
+            bars.append(round(pct / BIN_WIDTHS_K[i], 4))
+
+        # KDE
+        kde_values = compute_kde(incomes, weights)
+
+        total_adults_k = round(float(total_weight) / 1000)
+
+        results.append({
+            "y": int(income_year),
+            "b": bars,
+            "k": kde_values,
+            "m": round(float(w_median)),
+            "n": round(float(w_mean)),
+            "h": total_adults_k,
+            "ml": round(float(mid_low)),
+            "mu": round(float(mid_high)),
+            "hs": round(median_hhsize_by_year[income_year], 2),
+        })
+
+        # Validation: sum(density * width) should ~ 100%
+        area = sum(bars[i] * BIN_WIDTHS_K[i] for i in range(N_BINS))
+        print(f"  {income_year}: median=${w_median:>8,.0f}  "
+              f"middle=${mid_low:>7,.0f}-${mid_high:>8,.0f}  "
+              f"adults={total_adults_k:>5,}k  hhsize={median_hhsize_by_year[income_year]:.1f}  "
+              f"area={area:.1f}%")
+
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
+
+    df = load_extract()
+    results = process(df)
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    output = {
+        "bin_widths_k": [float(w) for w in BIN_WIDTHS_K],
+        "kde_x_range": [0, KDE_X_MAX / 1000],
+        "kde_n_points": KDE_N_POINTS,
+        "years": results,
+    }
+
+    with open(output_path, "w") as f:
+        json.dump(output, f, separators=(",", ":"))
+
+    size_kb = output_path.stat().st_size / 1024
+    print(f"\nSaved {len(results)} years ({results[0]['y']}-{results[-1]['y']}) "
+          f"to {output_path} ({size_kb:.0f}KB)")
+    print(f"Bins per year: {len(results[0]['b'])}")
+
+
+if __name__ == "__main__":
+    main()
